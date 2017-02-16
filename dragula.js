@@ -99,7 +99,7 @@ function dragula (initialContainers, options) {
     if (ignore) {
       return; // we only care about honest-to-god left clicks and touch events
     }
-    var item = e.target;
+    var item = e.target.shadowRoot && e.composedPath()[0] || e.target;
     var context = canStart(item);
     if (!context) {
       return;
@@ -553,17 +553,27 @@ function getElementBehindPoint (point, x, y) {
   point = point || {};
   var state = point.className || '';
   var el;
-  point.className += ' gu-hide';
-  el = doc.elementFromPoint(x, y);
-  point.className = state;
+  p.className += ' gu-hide';
+  el = elementFromPoint(x, y);
+  p.className = state;
   return el;
+
+  // Find the topmost element at point x, y.
+  // Traverses any shadow root to find the deepest element.
+  function elementFromPoint(x, y) {
+    var el = doc.elementFromPoint(x, y);
+    while (el && el.shadowRoot) {
+      el = el.shadowRoot.elementFromPoint(x, y);
+    }
+    return el;
+  }
 }
 
 function never () { return false; }
 function always () { return true; }
 function getRectWidth (rect) { return rect.width || (rect.right - rect.left); }
 function getRectHeight (rect) { return rect.height || (rect.bottom - rect.top); }
-function getParent (el) { return el.parentNode === doc ? null : el.parentNode; }
+function getParent (el) { return el.parentNode === doc ? null : (el.host || el.parentNode); }
 function isInput (el) { return el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || isEditable(el); }
 function isEditable (el) {
   if (!el) { return false; } // no parents were editable
